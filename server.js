@@ -26,8 +26,21 @@ const server = https.createServer(credentials, app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 // 静态文件服务 - 提供 public 目录下的文件
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res, filePath) => {
+        // 为HTML文件设置正确的Content-Type
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        }
+        // 为JavaScript文件设置正确的Content-Type
+        if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        }
+    }
+}));
+
 
 // CORS 中间件
 app.use((req, res, next) => {
