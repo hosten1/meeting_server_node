@@ -241,6 +241,27 @@ main() {
     log "端口: $PORT"
     log "路径: $APP_PATH"
     
+    # 从git获取最新代码
+    log "从git获取最新代码..."
+    
+    cd "$APP_PATH" || {
+        log "错误: 无法进入应用目录 $APP_PATH"
+        return 1
+    }
+    
+    # 执行git pull获取最新代码
+    if command -v git &> /dev/null; then
+        git_pull_output=$(git pull 2>&1)
+        if [ $? -eq 0 ]; then
+            log "✓ git pull 成功: $(clean_output "$git_pull_output")"
+        else
+            log "警告: git pull 失败: $(clean_output "$git_pull_output")"
+            log "继续执行重启流程..."
+        fi
+    else
+        log "警告: git 命令不可用，跳过代码更新"
+    fi
+    
     # 清理旧的PID文件
     cleanup_pid_file
     
