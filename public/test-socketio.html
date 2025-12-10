@@ -254,6 +254,7 @@
         <!-- 房间操作 -->
         <div class="test-section">
             <h2>3. 房间操作</h2>
+            <button class="btn btn-success" id="createRoomBtn" disabled>创建房间</button>
             <button class="btn" id="joinRoomBtn" disabled>加入房间</button>
             <button class="btn btn-danger" id="leaveRoomBtn" disabled>离开房间</button>
             <button class="btn btn-danger" id="disbandRoomBtn" disabled>解散房间</button>
@@ -321,6 +322,7 @@
             document.getElementById('generateUserId').addEventListener('click', generateUserId);
             
             // 房间操作按钮
+            document.getElementById('createRoomBtn').addEventListener('click', createRoom);
             document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
             document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
             document.getElementById('disbandRoomBtn').addEventListener('click', disbandRoom);
@@ -339,10 +341,12 @@
         function initTestResults() {
             const testCases = [
                 'connect',
+                'createRoom',
                 'joinRoom',
                 'getRooms',
                 'getRoomUsers',
                 'sendMessage',
+                'disbandRoom',
                 'leaveRoom'
             ];
             
@@ -401,6 +405,7 @@
             const statusDiv = document.getElementById('status');
             const connectBtn = document.getElementById('connectBtn');
             const disconnectBtn = document.getElementById('disconnectBtn');
+            const createRoomBtn = document.getElementById('createRoomBtn');
             const joinRoomBtn = document.getElementById('joinRoomBtn');
             const leaveRoomBtn = document.getElementById('leaveRoomBtn');
             const disbandRoomBtn = document.getElementById('disbandRoomBtn');
@@ -413,6 +418,7 @@
                 statusDiv.textContent = '已连接';
                 connectBtn.disabled = true;
                 disconnectBtn.disabled = false;
+                createRoomBtn.disabled = false;
                 joinRoomBtn.disabled = false;
                 getRoomsBtn.disabled = false;
                 testResults.connect = 'passed';
@@ -421,6 +427,7 @@
                 statusDiv.textContent = '已断开连接';
                 connectBtn.disabled = false;
                 disconnectBtn.disabled = true;
+                createRoomBtn.disabled = true;
                 joinRoomBtn.disabled = true;
                 leaveRoomBtn.disabled = true;
                 disbandRoomBtn.disabled = true;
@@ -432,6 +439,30 @@
             }
             
             updateTestResults();
+        }
+        
+        // 创建房间
+        function createRoom() {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+            const nickname = document.getElementById('nickname').value;
+            
+            if (!roomId || !userId || !nickname) {
+                alert('请填写完整的房间信息');
+                return;
+            }
+            
+            log(`正在创建房间 ${roomId}...`);
+            socket.emit('createRoom', {
+                roomId: roomId,
+                userId: userId,
+                nickname: nickname,
+                // 添加默认的媒体服务配置，避免验证失败
+                mediaConfig: {
+                    host: 'localhost',
+                    port: 8443
+                }
+            });
         }
         
         // 连接到服务器
@@ -470,11 +501,31 @@
                 updateConnectionStatus(false);
             });
             
+            // 创建房间结果
+            socket.on('createRoomResult', function(result) {
+                if (result.success) {
+                    log('✓ 创建房间成功', 'success');
+                    isInRoom = true;
+                    document.getElementById('createRoomBtn').disabled = true;
+                    document.getElementById('joinRoomBtn').disabled = true;
+                    document.getElementById('leaveRoomBtn').disabled = false;
+                    document.getElementById('disbandRoomBtn').disabled = false;
+                    document.getElementById('getRoomUsersBtn').disabled = false;
+                    document.getElementById('sendMessageBtn').disabled = false;
+                    testResults.createRoom = 'passed';
+                } else {
+                    log(`✗ 创建房间失败: ${result.message}`, 'error');
+                    testResults.createRoom = 'failed';
+                }
+                updateTestResults();
+            });
+            
             // 加入房间结果
             socket.on('joinRoomResult', function(result) {
                 if (result.success) {
                     log('✓ 加入房间成功', 'success');
                     isInRoom = true;
+                    document.getElementById('createRoomBtn').disabled = true;
                     document.getElementById('joinRoomBtn').disabled = true;
                     document.getElementById('leaveRoomBtn').disabled = false;
                     document.getElementById('disbandRoomBtn').disabled = false;
@@ -484,6 +535,25 @@
                 } else {
                     log(`✗ 加入房间失败: ${result.message}`, 'error');
                     testResults.joinRoom = 'failed';
+                }
+                updateTestResults();
+            });
+            
+            // 解散房间结果
+            socket.on('disbandRoomResult', function(result) {
+                if (result.success) {
+                    log('✓ 解散房间成功', 'success');
+                    isInRoom = false;
+                    document.getElementById('createRoomBtn').disabled = false;
+                    document.getElementById('joinRoomBtn').disabled = false;
+                    document.getElementById('leaveRoomBtn').disabled = true;
+                    document.getElementById('disbandRoomBtn').disabled = true;
+                    document.getElementById('getRoomUsersBtn').disabled = true;
+                    document.getElementById('sendMessageBtn').disabled = true;
+                    testResults.disbandRoom = 'passed';
+                } else {
+                    log(`✗ 解散房间失败: ${result.message}`, 'error');
+                    testResults.disbandRoom = 'failed';
                 }
                 updateTestResults();
             });
@@ -685,8 +755,9 @@
             // 延迟执行其他测试
             setTimeout(function() {
                 if (isConnected) {
-                    // 加入房间
-                    joinRoom();
+                    // 使用Socket.IO创建房间
+                    document.getElementById('messageInput').value = '测试消息';
+                    createRoom();
                     
                     // 延迟获取房间列表
                     setTimeout(function() {
@@ -702,19 +773,21 @@
                                 // 延迟发送消息
                                 setTimeout(function() {
                                     // 发送消息
-                                    document.getElementById('messageInput').value = '测试消息';
                                     sendMessage();
                                     
-                                    // 延迟离开房间
+                                    // 延迟解散房间
                                     setTimeout(function() {
-                                        // 离开房间
-                                        leaveRoom();
+                                        // 解散房间
+                                        disbandRoom();
                                         
                                         // 延迟断开连接
                                         setTimeout(function() {
                                             // 断开连接
                                             disconnect();
                                             log('=== 所有测试运行完成 ===', 'success');
+                                            
+                                            // 弹出测试结果
+                                            showTestResults();
                                         }, 2000);
                                     }, 2000);
                                 }, 2000);
@@ -729,6 +802,47 @@
         function stopTests() {
             disconnect();
             log('=== 测试已停止 ===', 'error');
+        }
+        
+        // 显示测试结果弹出反馈
+        function showTestResults() {
+            let passedCount = 0;
+            let failedCount = 0;
+            let pendingCount = 0;
+            
+            // 统计测试结果
+            for (const testCase in testResults) {
+                if (testResults[testCase] === 'passed') {
+                    passedCount++;
+                } else if (testResults[testCase] === 'failed') {
+                    failedCount++;
+                } else {
+                    pendingCount++;
+                }
+            }
+            
+            // 生成测试结果消息
+            const totalTests = Object.keys(testResults).length;
+            let resultMessage = `=== 测试结果 ===\n\n`;
+            resultMessage += `总测试用例: ${totalTests}\n`;
+            resultMessage += `✅ 通过: ${passedCount}\n`;
+            resultMessage += `❌ 失败: ${failedCount}\n`;
+            resultMessage += `⏳ 待定: ${pendingCount}\n\n`;
+            
+            // 详细结果
+            resultMessage += `详细结果:\n`;
+            for (const testCase in testResults) {
+                let statusEmoji = '⏳';
+                if (testResults[testCase] === 'passed') {
+                    statusEmoji = '✅';
+                } else if (testResults[testCase] === 'failed') {
+                    statusEmoji = '❌';
+                }
+                resultMessage += `${statusEmoji} ${testCase}: ${testResults[testCase]}\n`;
+            }
+            
+            // 显示弹出反馈
+            alert(resultMessage);
         }
     </script>
 </body>

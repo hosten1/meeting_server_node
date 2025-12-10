@@ -175,6 +175,11 @@ class SocketService {
                 this.handleDisconnect(userSocket);
             });
             
+            // 监听创建房间事件
+            socket.on('createRoom', (data) => {
+                this.handleCreateRoom(userSocket, data);
+            });
+            
             // 监听加入房间事件
             socket.on('joinRoom', (data) => {
                 this.handleJoinRoom(userSocket, data);
@@ -245,6 +250,41 @@ class SocketService {
         
         // 从用户列表中移除
         this.userSockets.delete(userSocket.socket.id);
+    }
+    
+    // 处理创建房间
+    async handleCreateRoom(userSocket, data) {
+        const { roomId, userId, nickname, roomName, mediaConfig } = data;
+        
+        try {
+            // 使用RoomService处理创建房间
+            const result = await RoomService.createRoom(roomId, userId, nickname, roomName, mediaConfig || {});
+            
+            if (result.success) {
+                // 设置用户信息
+                userSocket.setUserInfo(userId, roomId, nickname);
+                
+                // 加入房间
+                userSocket.joinRoom(roomId);
+                this.roomSocketManager.addUserToRoom(roomId, userSocket);
+                
+                // 发送创建结果
+                userSocket.send('createRoomResult', result);
+                
+                Logger.info(`用户 ${userId} 创建了房间 ${roomId}`);
+            } else {
+                // 发送失败结果
+                userSocket.send('createRoomResult', result);
+            }
+        } catch (error) {
+            Logger.error(`处理创建房间事件失败: ${error.message}`);
+            userSocket.send('createRoomResult', {
+                success: false,
+                code: 500,
+                message: '服务器内部错误',
+                data: null
+            });
+        }
     }
     
     // 处理加入房间
