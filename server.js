@@ -12,6 +12,9 @@ const Cleaner = require('./utils/cleaner');
 // 路由
 const apiRoutes = require('./routes');
 
+// 服务
+const SocketService = require('./services/SocketService');
+
 const app = express();
 
 // 读取 SSL 证书
@@ -21,6 +24,9 @@ const credentials = { key: privateKey, cert: certificate };
 
 // 创建 HTTPS 服务器
 const server = https.createServer(credentials, app);
+
+// 初始化 Socket.IO 服务
+SocketService.initialize(server);
 
 // 中间件
 app.use(express.json());

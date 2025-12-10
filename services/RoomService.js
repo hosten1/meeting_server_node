@@ -3,12 +3,49 @@ const Room = require('../models/Room');
 const User = require('../models/User');
 const MediaServiceConfig = require('../models/MediaServiceConfig');
 const Logger = require('../utils/logger');
+const EventEmitter = require('events');
 
 // 内存存储
 const rooms = new Map();
 const users = new Map();
 
+// 创建事件发射器实例
+const eventEmitter = new EventEmitter();
+
+// 房间服务类
 class RoomService {
+    // 暴露事件发射器的方法
+    static on(event, listener) {
+        eventEmitter.on(event, listener);
+    }
+    
+    static emit(event, data) {
+        eventEmitter.emit(event, data);
+    }
+    
+    // 更新用户活动时间
+    static updateUserActivity(userId) {
+        if (users.has(userId)) {
+            const user = users.get(userId);
+            user.updateActivity();
+            return {
+                success: true,
+                code: 200,
+                message: '用户活动时间已更新',
+                data: {
+                    userId: userId,
+                    lastActive: user.lastActive
+                }
+            };
+        }
+        return {
+            success: false,
+            code: 404,
+            message: '用户不存在',
+            data: null
+        };
+    }
+    
     // 创建房间
     static createRoom(roomId, userId, nickname, roomName, mediaConfig) {
         // 检查房间是否已存在
@@ -58,6 +95,9 @@ class RoomService {
 
         // 存储用户信息
         users.set(userId, user);
+        
+        // 发布房间创建事件
+        eventEmitter.emit('roomCreated', room.getRoomInfo());
         
         return {
             success: true,
@@ -343,6 +383,12 @@ class RoomService {
 
         // 删除房间
         rooms.delete(roomId);
+        
+        // 发布房间解散事件
+        eventEmitter.emit('roomDisbanded', {
+            roomId: roomId,
+            disbandedAt: new Date()
+        });
         
         return {
             success: true,
