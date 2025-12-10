@@ -9,6 +9,10 @@ const EventEmitter = require('events');
 const rooms = new Map();
 const users = new Map();
 
+// 导出房间和用户的内存存储，供其他服务使用
+module.exports.rooms = rooms;
+module.exports.users = users;
+
 // 创建事件发射器实例
 const eventEmitter = new EventEmitter();
 

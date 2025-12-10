@@ -14,23 +14,26 @@ const pageTitles = {
 };
 
 // 初始化
-document.addEventListener('DOMContentLoaded', function() {
-    // 获取DOM元素
-    menuToggle = document.getElementById('menuToggle');
-    sidebar = document.querySelector('.sidebar');
-    pageContents = document.querySelectorAll('.page-content');
-    pageTitle = document.getElementById('pageTitle');
-    refreshBtn = document.getElementById('refreshData');
-    
-    // 初始化事件监听器
-    initEventListeners();
-    
-    // 初始化页面
-    initPage();
-    
-    // 每30秒自动刷新数据
-    setInterval(loadDashboard, 30000);
-});
+	document.addEventListener('DOMContentLoaded', function() {
+		// 获取DOM元素
+		menuToggle = document.getElementById('menuToggle');
+		sidebar = document.querySelector('.sidebar');
+		pageContents = document.querySelectorAll('.page-content');
+		pageTitle = document.getElementById('pageTitle');
+		refreshBtn = document.getElementById('refreshData');
+		
+		// 初始化事件监听器
+		initEventListeners();
+		
+		// 初始化用户管理功能
+		window.userManager.init();
+		
+		// 初始化页面
+		initPage();
+		
+		// 每30秒自动刷新数据
+		setInterval(loadDashboard, 30000);
+	});
 
 // 初始化事件监听器
 function initEventListeners() {
@@ -154,6 +157,12 @@ function initEventListeners() {
         }
         if (e.target === document.getElementById('roomEditModal')) {
             window.utils.closeModal('roomEditModal');
+        }
+        if (e.target === document.getElementById('userEditModal')) {
+            window.utils.closeModal('userEditModal');
+        }
+        if (e.target === document.getElementById('serverLogsModal')) {
+            window.utils.closeModal('serverLogsModal');
         }
         if (e.target === document.getElementById('confirmModal')) {
             window.utils.closeModal('confirmModal');

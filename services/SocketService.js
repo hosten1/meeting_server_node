@@ -3,6 +3,7 @@ const socketio = require('socket.io');
 const EventEmitter = require('events');
 const Logger = require('../utils/logger');
 const RoomService = require('./RoomService');
+const UserService = require('./UserService');
 
 // 创建事件发射器
 const eventEmitter = new EventEmitter();
@@ -213,6 +214,26 @@ class SocketService {
             // 监听自定义消息事件
             socket.on('message', (data) => {
                 this.handleMessage(userSocket, data);
+            });
+            
+            // 监听获取房间信息事件
+            socket.on('getRoomInfo', (data) => {
+                this.handleGetRoomInfo(userSocket, data);
+            });
+            
+            // 监听更新媒体配置事件
+            socket.on('updateMediaConfig', (data) => {
+                this.handleUpdateMediaConfig(userSocket, data);
+            });
+            
+            // 监听更新用户信息事件
+            socket.on('updateUser', (data) => {
+                this.handleUpdateUser(userSocket, data);
+            });
+            
+            // 监听健康检查事件
+            socket.on('healthCheck', () => {
+                this.handleHealthCheck(userSocket);
             });
         });
     }
@@ -522,6 +543,93 @@ class SocketService {
     // 获取所有在线用户数
     getAllOnlineUsersCount() {
         return this.userSockets.size;
+    }
+    
+    // 处理获取房间信息
+    async handleGetRoomInfo(userSocket, data) {
+        const { roomId } = data;
+        
+        try {
+            // 使用RoomService获取房间信息
+            const result = await RoomService.getRoomInfo(roomId);
+            userSocket.send('getRoomInfoResult', result);
+        } catch (error) {
+            Logger.error(`处理获取房间信息事件失败: ${error.message}`);
+            userSocket.send('getRoomInfoResult', {
+                success: false,
+                code: 500,
+                message: '服务器内部错误',
+                data: null
+            });
+        }
+    }
+    
+    // 处理更新媒体配置
+    async handleUpdateMediaConfig(userSocket, data) {
+        const { roomId, userId, mediaConfig } = data;
+        
+        try {
+            // 使用RoomService更新媒体配置
+            const result = await RoomService.updateMediaConfig(roomId, userId, mediaConfig);
+            userSocket.send('updateMediaConfigResult', result);
+        } catch (error) {
+            Logger.error(`处理更新媒体配置事件失败: ${error.message}`);
+            userSocket.send('updateMediaConfigResult', {
+                success: false,
+                code: 500,
+                message: '服务器内部错误',
+                data: null
+            });
+        }
+    }
+    
+    // 处理更新用户信息
+    async handleUpdateUser(userSocket, data) {
+        const { userId, nickname } = data;
+        
+        try {
+            // 使用UserService更新用户信息
+            const result = UserService.updateUser(userId, nickname);
+            userSocket.send('updateUserResult', result);
+            
+            // 更新本地用户信息
+            if (userSocket.userId === userId) {
+                userSocket.nickname = nickname;
+            }
+            
+            Logger.info(`用户 ${userId} 更新了信息，新昵称: ${nickname}`);
+        } catch (error) {
+            Logger.error(`处理更新用户信息事件失败: ${error.message}`);
+            userSocket.send('updateUserResult', {
+                success: false,
+                code: 500,
+                message: '服务器内部错误',
+                data: null
+            });
+        }
+    }
+    
+    // 处理健康检查
+    async handleHealthCheck(userSocket) {
+        try {
+            // 获取系统统计信息
+            const stats = RoomService.getStats();
+            
+            userSocket.send('healthCheckResult', {
+                success: true,
+                status: 'healthy',
+                timestamp: new Date().toISOString(),
+                stats: stats
+            });
+        } catch (error) {
+            Logger.error(`处理健康检查事件失败: ${error.message}`);
+            userSocket.send('healthCheckResult', {
+                success: false,
+                status: 'unhealthy',
+                message: '服务器内部错误',
+                timestamp: new Date().toISOString()
+            });
+        }
     }
     
     // 暴露事件发射器方法

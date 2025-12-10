@@ -1,7 +1,7 @@
 const io = require('socket.io-client');
 
 // 测试配置
-const SERVER_URL = 'https://localhost:5349';
+const SERVER_URL = 'https://8.137.17.218:5349';
 const testConfig = {
   roomId: `test-room-${Date.now()}`,
   userId: `test-user-${Date.now()}`,
@@ -15,7 +15,24 @@ console.log('测试配置:', testConfig);
 const socket = io(SERVER_URL, {
   reconnection: false,
   rejectUnauthorized: false,
-  transports: ['websocket']
+  transports: ['websocket', 'polling'], // 添加polling作为备选
+  // 启用调试日志
+  debug: true
+});
+
+// 连接错误事件
+socket.on('connect_error', (error) => {
+  console.log('✗ 连接错误:', error.message);
+  console.log('错误详情:', error);
+  console.log('=== Socket.IO 测试失败 ===');
+  process.exit(1);
+});
+
+// 连接超时事件
+socket.on('connect_timeout', (timeout) => {
+  console.log('✗ 连接超时:', timeout);
+  console.log('=== Socket.IO 测试失败 ===');
+  process.exit(1);
 });
 
 // 连接事件
@@ -105,12 +122,63 @@ socket.on('getRoomUsersResult', (result) => {
 socket.on('message', (data) => {
   console.log('✓ 收到消息:', data);
   
-  // 解散房间
-  console.log('尝试解散房间...');
-  socket.emit('disbandRoom', {
-    roomId: testConfig.roomId,
-    userId: testConfig.userId
+  // 获取房间信息
+  console.log('尝试获取房间信息...');
+  socket.emit('getRoomInfo', {
+    roomId: testConfig.roomId
   });
+});
+
+// 获取房间信息结果
+socket.on('getRoomInfoResult', (result) => {
+  if (result.success) {
+    console.log('✓ 获取房间信息成功');
+    console.log('房间信息:', result.data);
+    
+    // 更新用户信息
+    console.log('尝试更新用户信息...');
+    socket.emit('updateUser', {
+      userId: testConfig.userId,
+      nickname: testConfig.nickname + '_更新'
+    });
+  } else {
+    console.log('✗ 获取房间信息失败:', result.message);
+    socket.disconnect();
+  }
+});
+
+// 更新用户信息结果
+socket.on('updateUserResult', (result) => {
+  if (result.success) {
+    console.log('✓ 更新用户信息成功');
+    console.log('更新结果:', result.data);
+    
+    // 健康检查
+    console.log('尝试进行健康检查...');
+    socket.emit('healthCheck');
+  } else {
+    console.log('✗ 更新用户信息失败:', result.message);
+    socket.disconnect();
+  }
+});
+
+// 健康检查结果
+socket.on('healthCheckResult', (result) => {
+  if (result.success) {
+    console.log('✓ 健康检查成功');
+    console.log('系统状态:', result.status);
+    console.log('统计信息:', result.stats);
+    
+    // 解散房间
+    console.log('尝试解散房间...');
+    socket.emit('disbandRoom', {
+      roomId: testConfig.roomId,
+      userId: testConfig.userId
+    });
+  } else {
+    console.log('✗ 健康检查失败:', result.message);
+    socket.disconnect();
+  }
 });
 
 // 解散房间结果
@@ -166,4 +234,4 @@ setTimeout(() => {
   console.log('=== Socket.IO 测试失败 ===');
   socket.disconnect();
   process.exit(1);
-}, 10000);
+}, 20000);

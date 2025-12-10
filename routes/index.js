@@ -76,6 +76,109 @@ router.get('/', (req, res) => {
     });
 });
 
+// 日志查看
+router.get('/logs', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const CONFIG = require('../config');
+    
+    try {
+        const logFilePath = CONFIG.LOGGING.FILE_PATH;
+        const level = req.query.level || 'all';
+        
+        // 检查日志文件是否存在
+        if (!fs.existsSync(logFilePath)) {
+            return res.status(200).json({
+                success: true,
+                code: 200,
+                message: '日志文件不存在',
+                data: {
+                    logs: []
+                }
+            });
+        }
+        
+        // 读取日志文件
+        const logs = fs.readFileSync(logFilePath, 'utf8');
+        const logLines = logs.split('\n').filter(line => line.trim() !== '');
+        
+        // 解析日志行
+        const parsedLogs = logLines.map(line => {
+            // 解析日志格式：[2023-12-10T03:15:19.306Z] [INFO] Socket.IO服务已初始化
+            const match = line.match(/\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\] \[(\w+)\] (.*?): (.*)/);
+            if (match) {
+                return {
+                    time: match[1],
+                    level: match[2],
+                    module: match[3],
+                    action: '',
+                    detail: match[4]
+                };
+            }
+            // 如果解析失败，返回原始行
+            return {
+                time: new Date().toISOString(),
+                level: 'INFO',
+                module: 'Unknown',
+                action: '',
+                detail: line
+            };
+        });
+        
+        // 过滤日志级别
+        let filteredLogs = parsedLogs;
+        if (level !== 'all') {
+            filteredLogs = parsedLogs.filter(log => log.level === level);
+        }
+        
+        // 只返回最近的1000条日志
+        const recentLogs = filteredLogs.slice(-1000);
+        
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: '日志获取成功',
+            data: {
+                logs: recentLogs
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            code: 500,
+            message: '读取日志失败',
+            data: null
+        });
+    }
+});
+
+// 清空日志
+router.delete('/logs', (req, res) => {
+    const fs = require('fs');
+    const CONFIG = require('../config');
+    
+    try {
+        const logFilePath = CONFIG.LOGGING.FILE_PATH;
+        
+        // 清空日志文件
+        fs.writeFileSync(logFilePath, '', 'utf8');
+        
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: '日志清空成功',
+            data: null
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            code: 500,
+            message: '清空日志失败',
+            data: null
+        });
+    }
+});
+
 // 404处理
 router.use('*', (req, res) => {
     res.status(404).json({

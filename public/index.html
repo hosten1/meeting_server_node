@@ -123,8 +123,11 @@
 
             <!-- 用户管理页面 -->
             <div id="users-content" class="page-content d-none">
-                <div class="section-title">
+                <div class="section-title justify-between">
                     <span><i class="fas fa-users"></i> 在线用户</span>
+                    <button class="btn btn-primary" id="addUserBtn">
+                        <i class="fas fa-plus"></i> 新增用户
+                    </button>
                 </div>
                 <div id="onlineUsersList" class="user-list">
                     <!-- 动态加载在线用户 -->
@@ -342,6 +345,100 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancelConfirm">取消</button>
                 <button type="button" class="btn btn-primary" id="confirmAction">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户编辑/新增模态框 -->
+    <div id="userEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="userEditTitle">新增用户</h3>
+                <button class="close-modal" id="closeUserEdit">&times;</button>
+            </div>
+            <form id="userEditForm">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户ID</label>
+                            <input type="text" class="form-control" id="editUserId" required>
+                            <small class="form-text">用户唯一标识</small>
+                        </div>
+                        <div class="form-group">
+                            <label>用户昵称</label>
+                            <input type="text" class="form-control" id="editUserNickname" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户类型</label>
+                            <select class="form-control" id="editUserType">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>用户状态</label>
+                            <select class="form-control" id="editUserStatus">
+                                <option value="active">活跃</option>
+                                <option value="inactive">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>房间ID</label>
+                        <input type="text" class="form-control" id="editUserRoomId" placeholder="可选，用户所在房间">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>头像上传</label>
+                        <div class="avatar-upload-container">
+                            <div class="avatar-preview" id="avatarPreview">
+                                <img id="avatarImage" src="" alt="头像预览" style="display: none;">
+                                <span id="avatarPlaceholder">点击上传头像</span>
+                            </div>
+                            <input type="file" class="form-control" id="avatarFile" accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-secondary" id="chooseAvatarBtn">选择图片</button>
+                            <button type="button" class="btn btn-danger" id="removeAvatarBtn" style="display: none;">移除头像</button>
+                        </div>
+                        <small class="form-text">支持JPG、PNG格式，大小不超过2MB</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelUserEdit">取消</button>
+                    <button type="submit" class="btn btn-primary" id="saveUserBtn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 服务运行日志查看模态框 -->
+    <div id="serverLogsModal" class="modal">
+        <div class="modal-content" style="width: 90%; max-width: 1200px; max-height: 80vh;">
+            <div class="modal-header">
+                <h3>服务运行日志</h3>
+                <button class="close-modal" id="closeServerLogs">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow: hidden;">
+                <div class="logs-controls" style="margin-bottom: 10px;">
+                    <button class="btn btn-secondary" id="refreshLogs">
+                        <i class="fas fa-sync-alt"></i> 刷新日志
+                    </button>
+                    <button class="btn btn-secondary" id="clearLogs">
+                        <i class="fas fa-trash"></i> 清空日志
+                    </button>
+                    <select id="logLevelFilter" class="form-control" style="display: inline-block; width: auto; margin-left: 10px;">
+                        <option value="all">所有级别</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARN">WARN</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+                <div id="serverLogsContent" style="overflow-y: auto; max-height: 60vh; background-color: #f5f5f5; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                    <!-- 动态加载服务器日志 -->
+                </div>
             </div>
         </div>
     </div>

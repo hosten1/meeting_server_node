@@ -5,6 +5,9 @@ const CONFIG = {
     // 服务器配置
     PORT: process.env.PORT || 5349,
     HOST: process.env.HOST || '0.0.0.0',
+    SERVER: {
+        URL: process.env.SERVER_URL || 'https://8.137.17.218:5349'
+    },
     
     // 日志配置
     LOGGING: {

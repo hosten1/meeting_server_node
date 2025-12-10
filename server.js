@@ -15,6 +15,9 @@ const apiRoutes = require('./routes');
 // 服务
 const SocketService = require('./services/SocketService');
 
+// 中间件
+const multer = require('multer');
+
 const app = express();
 
 // 读取 SSL 证书
@@ -32,6 +35,49 @@ SocketService.initialize(server);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 配置multer用于文件上传
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, 'public', 'avatars');
+        // 确保目录存在
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // 生成唯一的文件名
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, 'avatar-' + uniqueSuffix + ext);
+    }
+});
+
+// 文件过滤
+const fileFilter = (req, file, cb) => {
+    // 只允许图片文件
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+        return cb(null, true);
+    } else {
+        cb(new Error('只允许上传图片文件（JPEG、PNG、GIF）'));
+    }
+};
+
+// 创建multer实例
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 2 * 1024 * 1024 // 2MB
+    },
+    fileFilter: fileFilter
+});
+
+// 添加multer到全局，以便在控制器中使用
+app.use(upload.any());
 
 // 静态文件服务 - 提供 public 目录下的文件
 app.use(express.static(path.join(__dirname, 'public'), {

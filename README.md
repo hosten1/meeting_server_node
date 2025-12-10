@@ -336,19 +336,29 @@ POST /api/restart
 | `leaveRoom` | `{roomId, userId}` | 离开指定房间 |
 | `getRooms` | 无 | 获取所有房间列表 |
 | `getRoomUsers` | `{roomId}` | 获取指定房间的用户列表 |
+| `getRoomInfo` | `{roomId}` | 获取指定房间的信息 |
+| `updateMediaConfig` | `{roomId, userId, mediaConfig}` | 更新房间媒体配置 |
 | `disbandRoom` | `{roomId, userId}` | 解散指定房间 |
 | `heartbeat` | `{userId}` | 更新用户活动时间 |
+| `updateUser` | `{userId, nickname}` | 更新用户信息 |
+| `healthCheck` | 无 | 健康检查 |
 
 ### 服务器事件
 
 | 事件名 | 参数 | 描述 |
 |--------|------|------|
+| `createRoomResult` | `{success, code, message, data}` | 创建房间结果 |
 | `joinRoomResult` | `{success, code, message, data}` | 加入房间结果 |
 | `leaveRoomResult` | `{success, code, message, data}` | 离开房间结果 |
 | `getRoomsResult` | `{success, code, message, data}` | 获取房间列表结果 |
 | `getRoomUsersResult` | `{success, code, message, data}` | 获取房间用户列表结果 |
+| `getRoomInfoResult` | `{success, code, message, data}` | 获取房间信息结果 |
+| `updateMediaConfigResult` | `{success, code, message, data}` | 更新媒体配置结果 |
 | `disbandRoomResult` | `{success, code, message, data}` | 解散房间结果 |
 | `heartbeatResult` | `{success, message, timestamp}` | 心跳结果 |
+| `updateUserResult` | `{success, code, message, data}` | 更新用户信息结果 |
+| `healthCheckResult` | `{success, status, timestamp, stats}` | 健康检查结果 |
+| `message` | `{userId, nickname, message, timestamp}` | 收到消息 |
 | `userJoined` | `{userId, nickname, timestamp}` | 新用户加入房间通知 |
 | `userLeft` | `{userId, timestamp}` | 用户离开房间通知 |
 | `roomDisbanded` | `{roomId, disbandedAt}` | 房间解散通知 |
