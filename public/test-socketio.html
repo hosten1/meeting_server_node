@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        .test-section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: inline-block;
+            width: 100px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        .form-group input[type="number"] {
+            width: 100px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #1976d2;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .btn-success {
+            background-color: #4caf50;
+        }
+        
+        .btn-success:hover {
+            background-color: #388e3c;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background-color: #e8f5e8;
+            border: 1px solid #c8e6c9;
+            color: #2e7d32;
+        }
+        
+        .result.error {
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+        }
+        
+        .result.info {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            color: #1565c0;
+        }
+        
+        .status {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background-color: #e8f5e8;
+            color: #4caf50;
+        }
+        
+        .status.disconnected {
+            background-color: #ffebee;
+            color: #f44336;
+        }
+        
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .test-result h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .test-case {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .test-case.passed {
+            background-color: #e8f5e8;
+            color: #4caf50;
+        }
+        
+        .test-case.failed {
+            background-color: #ffebee;
+            color: #f44336;
+        }
+        
+        .test-case.pending {
+            background-color: #fff3e0;
+            color: #ff9800;
+        }
+        
+        .message-box {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        
+        .message {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid #2196f3;
+        }
+        
+        .message.my-message {
+            border-left-color: #4caf50;
+            background-color: #e8f5e8;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Socket.IO 2.x 测试页面</h1>
+        
+        <div class="info">
+            <strong>测试说明：</strong>
+            <ul>
+                <li>此页面用于测试Socket.IO 2.x功能，兼容iOS客户端</li>
+                <li>请确保服务器已启动，端口为5349</li>
+                <li>测试过程中会显示详细的日志信息</li>
+                <li>测试结果将实时更新在页面下方</li>
+            </ul>
+        </div>
+        
+        <!-- 连接状态 -->
+        <div class="test-section">
+            <h2>1. 连接状态</h2>
+            <div id="status" class="status disconnected">已断开连接</div>
+            <button class="btn" id="connectBtn">连接</button>
+            <button class="btn btn-danger" id="disconnectBtn" disabled>断开连接</button>
+        </div>
+        
+        <!-- 连接配置 -->
+        <div class="test-section">
+            <h2>2. 连接配置</h2>
+            <div class="form-group">
+                <label for="serverUrl">服务器地址：</label>
+                <input type="text" id="serverUrl" value="https://localhost:5349" placeholder="https://localhost:5349">
+            </div>
+            <div class="form-group">
+                <label for="roomId">房间ID：</label>
+                <input type="text" id="roomId" value="test-room-" placeholder="test-room">
+                <button class="btn" id="generateRoomId">生成</button>
+            </div>
+            <div class="form-group">
+                <label for="userId">用户ID：</label>
+                <input type="text" id="userId" value="user-" placeholder="user-123">
+                <button class="btn" id="generateUserId">生成</button>
+            </div>
+            <div class="form-group">
+                <label for="nickname">昵称：</label>
+                <input type="text" id="nickname" value="测试用户" placeholder="测试用户">
+            </div>
+        </div>
+        
+        <!-- 房间操作 -->
+        <div class="test-section">
+            <h2>3. 房间操作</h2>
+            <button class="btn" id="joinRoomBtn" disabled>加入房间</button>
+            <button class="btn btn-danger" id="leaveRoomBtn" disabled>离开房间</button>
+            <button class="btn btn-danger" id="disbandRoomBtn" disabled>解散房间</button>
+            <button class="btn" id="getRoomsBtn" disabled>获取房间列表</button>
+            <button class="btn" id="getRoomUsersBtn" disabled>获取房间用户</button>
+        </div>
+        
+        <!-- 消息测试 -->
+        <div class="test-section">
+            <h2>4. 消息测试</h2>
+            <div class="form-group">
+                <label for="messageInput">消息：</label>
+                <input type="text" id="messageInput" value="Hello, Socket.IO!" placeholder="输入消息">
+                <button class="btn" id="sendMessageBtn" disabled>发送消息</button>
+            </div>
+            <div class="message-box" id="messageBox"></div>
+        </div>
+        
+        <!-- 自动测试 -->
+        <div class="test-section">
+            <h2>5. 自动测试</h2>
+            <button class="btn btn-success" id="runAllTestsBtn">运行所有测试</button>
+            <button class="btn" id="stopTestsBtn" disabled>停止测试</button>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="test-result">
+            <h3>测试结果</h3>
+            <div id="testResults"></div>
+        </div>
+        
+        <!-- 日志 -->
+        <div class="test-section">
+            <h2>6. 详细日志</h2>
+            <div class="result info" id="log"></div>
+        </div>
+    </div>
+    
+    <!-- 引入 Socket.IO 2.x 客户端 -->
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2.5.0/dist/socket.io.js"></script>
+    
+    <script>
+        // 全局变量
+        let socket = null;
+        let isConnected = false;
+        let isInRoom = false;
+        let testResults = {};
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initEventListeners();
+            initTestResults();
+            generateRoomId();
+            generateUserId();
+        });
+        
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 连接和断开连接按钮
+            document.getElementById('connectBtn').addEventListener('click', connect);
+            document.getElementById('disconnectBtn').addEventListener('click', disconnect);
+            
+            // 生成按钮
+            document.getElementById('generateRoomId').addEventListener('click', generateRoomId);
+            document.getElementById('generateUserId').addEventListener('click', generateUserId);
+            
+            // 房间操作按钮
+            document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
+            document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
+            document.getElementById('disbandRoomBtn').addEventListener('click', disbandRoom);
+            document.getElementById('getRoomsBtn').addEventListener('click', getRooms);
+            document.getElementById('getRoomUsersBtn').addEventListener('click', getRoomUsers);
+            
+            // 消息按钮
+            document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+            
+            // 自动测试按钮
+            document.getElementById('runAllTestsBtn').addEventListener('click', runAllTests);
+            document.getElementById('stopTestsBtn').addEventListener('click', stopTests);
+        }
+        
+        // 初始化测试结果
+        function initTestResults() {
+            const testCases = [
+                'connect',
+                'joinRoom',
+                'getRooms',
+                'getRoomUsers',
+                'sendMessage',
+                'leaveRoom'
+            ];
+            
+            testResults = {};
+            testCases.forEach(testCase => {
+                testResults[testCase] = 'pending';
+            });
+            
+            updateTestResults();
+        }
+        
+        // 更新测试结果
+        function updateTestResults() {
+            const testResultsDiv = document.getElementById('testResults');
+            let html = '';
+            
+            for (const [testCase, result] of Object.entries(testResults)) {
+                const statusClass = result === 'passed' ? 'passed' : result === 'failed' ? 'failed' : 'pending';
+                html += `<div class="test-case ${statusClass}">${testCase}: ${result}</div>`;
+            }
+            
+            testResultsDiv.innerHTML = html;
+        }
+        
+        // 生成房间ID
+        function generateRoomId() {
+            document.getElementById('roomId').value = 'test-room-' + Date.now();
+        }
+        
+        // 生成用户ID
+        function generateUserId() {
+            document.getElementById('userId').value = 'user-' + Date.now();
+        }
+        
+        // 显示日志
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleString();
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // 显示消息
+        function showMessage(message, isMyMessage = false) {
+            const messageBox = document.getElementById('messageBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isMyMessage ? 'my-message' : ''}`;
+            messageDiv.innerHTML = `<strong>${isMyMessage ? '我' : '对方'}:</strong> ${message}`;
+            messageBox.appendChild(messageDiv);
+            messageBox.scrollTop = messageBox.scrollHeight;
+        }
+        
+        // 更新连接状态
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const statusDiv = document.getElementById('status');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const joinRoomBtn = document.getElementById('joinRoomBtn');
+            const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+            const disbandRoomBtn = document.getElementById('disbandRoomBtn');
+            const getRoomsBtn = document.getElementById('getRoomsBtn');
+            const getRoomUsersBtn = document.getElementById('getRoomUsersBtn');
+            const sendMessageBtn = document.getElementById('sendMessageBtn');
+            
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '已连接';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                joinRoomBtn.disabled = false;
+                getRoomsBtn.disabled = false;
+                testResults.connect = 'passed';
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '已断开连接';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                joinRoomBtn.disabled = true;
+                leaveRoomBtn.disabled = true;
+                disbandRoomBtn.disabled = true;
+                getRoomsBtn.disabled = true;
+                getRoomUsersBtn.disabled = true;
+                sendMessageBtn.disabled = true;
+                isInRoom = false;
+                testResults.connect = 'failed';
+            }
+            
+            updateTestResults();
+        }
+        
+        // 连接到服务器
+        function connect() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            
+            if (!serverUrl) {
+                alert('请输入服务器地址');
+                return;
+            }
+            
+            log(`正在连接到 ${serverUrl}...`);
+            
+            // 创建Socket.IO客户端
+            socket = io(serverUrl, {
+                reconnection: false,
+                rejectUnauthorized: false,
+                transports: ['websocket']
+            });
+            
+            // 连接事件
+            socket.on('connect', function() {
+                log('✓ 连接成功', 'success');
+                updateConnectionStatus(true);
+            });
+            
+            // 断开连接事件
+            socket.on('disconnect', function() {
+                log('✗ 断开连接', 'error');
+                updateConnectionStatus(false);
+            });
+            
+            // 连接错误事件
+            socket.on('connect_error', function(error) {
+                log(`✗ 连接错误: ${error.message}`, 'error');
+                updateConnectionStatus(false);
+            });
+            
+            // 加入房间结果
+            socket.on('joinRoomResult', function(result) {
+                if (result.success) {
+                    log('✓ 加入房间成功', 'success');
+                    isInRoom = true;
+                    document.getElementById('joinRoomBtn').disabled = true;
+                    document.getElementById('leaveRoomBtn').disabled = false;
+                    document.getElementById('disbandRoomBtn').disabled = false;
+                    document.getElementById('getRoomUsersBtn').disabled = false;
+                    document.getElementById('sendMessageBtn').disabled = false;
+                    testResults.joinRoom = 'passed';
+                } else {
+                    log(`✗ 加入房间失败: ${result.message}`, 'error');
+                    testResults.joinRoom = 'failed';
+                }
+                updateTestResults();
+            });
+            
+            // 获取房间列表结果
+            socket.on('getRoomsResult', function(result) {
+                if (result.success) {
+                    log(`✓ 获取房间列表成功，共 ${result.data.count} 个房间`, 'success');
+                    log(JSON.stringify(result.data.rooms, null, 2), 'success');
+                    testResults.getRooms = 'passed';
+                } else {
+                    log(`✗ 获取房间列表失败: ${result.message}`, 'error');
+                    testResults.getRooms = 'failed';
+                }
+                updateTestResults();
+            });
+            
+            // 获取房间用户结果
+            socket.on('getRoomUsersResult', function(result) {
+                if (result.success) {
+                    log(`✓ 获取房间用户成功，共 ${result.data.userCount} 个用户`, 'success');
+                    log(JSON.stringify(result.data.users, null, 2), 'success');
+                    testResults.getRoomUsers = 'passed';
+                } else {
+                    log(`✗ 获取房间用户失败: ${result.message}`, 'error');
+                    testResults.getRoomUsers = 'failed';
+                }
+                updateTestResults();
+            });
+            
+            // 解散房间结果
+            socket.on('disbandRoomResult', function(result) {
+                if (result.success) {
+                    log('✓ 解散房间成功', 'success');
+                    isInRoom = false;
+                    document.getElementById('joinRoomBtn').disabled = false;
+                    document.getElementById('leaveRoomBtn').disabled = true;
+                    document.getElementById('disbandRoomBtn').disabled = true;
+                    document.getElementById('getRoomUsersBtn').disabled = true;
+                    document.getElementById('sendMessageBtn').disabled = true;
+                } else {
+                    log(`✗ 解散房间失败: ${result.message}`, 'error');
+                }
+            });
+            
+            // 心跳结果
+            socket.on('heartbeatResult', function(result) {
+                if (result.success) {
+                    log('✓ 心跳成功', 'success');
+                } else {
+                    log(`✗ 心跳失败: ${result.message}`, 'error');
+                }
+            });
+            
+            // 收到消息
+            socket.on('message', function(data) {
+                log(`收到消息: ${JSON.stringify(data)}`, 'success');
+                showMessage(data.message, false);
+                testResults.message = 'passed';
+                updateTestResults();
+            });
+            
+            // 用户加入通知
+            socket.on('userJoined', function(data) {
+                log(`⚠ 用户加入通知: ${data.nickname} (${data.userId}) 加入了房间`, 'info');
+            });
+            
+            // 用户离开通知
+            socket.on('userLeft', function(data) {
+                log(`⚠ 用户离开通知: ${data.userId} 离开了房间`, 'info');
+            });
+            
+            // 房间解散通知
+            socket.on('roomDisbanded', function(data) {
+                log(`⚠ 房间解散通知: 房间 ${data.roomId} 已被解散`, 'info');
+                isInRoom = false;
+                document.getElementById('joinRoomBtn').disabled = false;
+                document.getElementById('leaveRoomBtn').disabled = true;
+                document.getElementById('disbandRoomBtn').disabled = true;
+                document.getElementById('getRoomUsersBtn').disabled = true;
+                document.getElementById('sendMessageBtn').disabled = true;
+            });
+        }
+        
+        // 断开连接
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            updateConnectionStatus(false);
+        }
+        
+        // 加入房间
+        function joinRoom() {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+            const nickname = document.getElementById('nickname').value;
+            
+            if (!roomId || !userId || !nickname) {
+                alert('请填写完整的房间信息');
+                return;
+            }
+            
+            log(`正在加入房间 ${roomId}...`);
+            socket.emit('joinRoom', {
+                roomId: roomId,
+                userId: userId,
+                nickname: nickname
+            });
+        }
+        
+        // 离开房间
+        function leaveRoom() {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+            
+            log(`正在离开房间 ${roomId}...`);
+            socket.emit('leaveRoom', {
+                roomId: roomId,
+                userId: userId
+            });
+            
+            socket.on('leaveRoomResult', function(result) {
+                if (result.success) {
+                    log('✓ 离开房间成功', 'success');
+                    isInRoom = false;
+                    document.getElementById('joinRoomBtn').disabled = false;
+                    document.getElementById('leaveRoomBtn').disabled = true;
+                    document.getElementById('disbandRoomBtn').disabled = true;
+                    document.getElementById('getRoomUsersBtn').disabled = true;
+                    document.getElementById('sendMessageBtn').disabled = true;
+                    testResults.leaveRoom = 'passed';
+                } else {
+                    log(`✗ 离开房间失败: ${result.message}`, 'error');
+                    testResults.leaveRoom = 'failed';
+                }
+                updateTestResults();
+            });
+        }
+        
+        // 解散房间
+        function disbandRoom() {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+            
+            log(`正在解散房间 ${roomId}...`);
+            socket.emit('disbandRoom', {
+                roomId: roomId,
+                userId: userId
+            });
+        }
+        
+        // 获取房间列表
+        function getRooms() {
+            log('正在获取房间列表...');
+            socket.emit('getRooms');
+        }
+        
+        // 获取房间用户
+        function getRoomUsers() {
+            const roomId = document.getElementById('roomId').value;
+            log(`正在获取房间 ${roomId} 的用户...`);
+            socket.emit('getRoomUsers', {
+                roomId: roomId
+            });
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const roomId = document.getElementById('roomId').value;
+            const message = document.getElementById('messageInput').value;
+            
+            if (!message) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            log(`正在发送消息: ${message}`);
+            socket.emit('message', {
+                roomId: roomId,
+                message: message
+            });
+            
+            showMessage(message, true);
+            document.getElementById('messageInput').value = '';
+        }
+        
+        // 运行所有测试
+        function runAllTests() {
+            log('=== 开始运行所有测试 ===', 'success');
+            
+            // 重置测试结果
+            initTestResults();
+            
+            // 连接到服务器
+            connect();
+            
+            // 延迟执行其他测试
+            setTimeout(function() {
+                if (isConnected) {
+                    // 加入房间
+                    joinRoom();
+                    
+                    // 延迟获取房间列表
+                    setTimeout(function() {
+                        if (isInRoom) {
+                            // 获取房间列表
+                            getRooms();
+                            
+                            // 延迟获取房间用户
+                            setTimeout(function() {
+                                // 获取房间用户
+                                getRoomUsers();
+                                
+                                // 延迟发送消息
+                                setTimeout(function() {
+                                    // 发送消息
+                                    document.getElementById('messageInput').value = '测试消息';
+                                    sendMessage();
+                                    
+                                    // 延迟离开房间
+                                    setTimeout(function() {
+                                        // 离开房间
+                                        leaveRoom();
+                                        
+                                        // 延迟断开连接
+                                        setTimeout(function() {
+                                            // 断开连接
+                                            disconnect();
+                                            log('=== 所有测试运行完成 ===', 'success');
+                                        }, 2000);
+                                    }, 2000);
+                                }, 2000);
+                            }, 2000);
+                        }
+                    }, 2000);
+                }
+            }, 2000);
+        }
+        
+        // 停止测试
+        function stopTests() {
+            disconnect();
+            log('=== 测试已停止 ===', 'error');
+        }
+    </script>
+</body>
+</html>
