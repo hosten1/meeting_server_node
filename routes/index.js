@@ -22,6 +22,38 @@ router.get('/health', (req, res) => {
     });
 });
 
+// 重启服务（仅开发环境可用）
+router.post('/restart', (req, res) => {
+    const { spawn } = require('child_process');
+    
+    // 检查是否为开发环境
+    if (process.env.NODE_ENV !== 'development') {
+        return res.status(403).json({
+            success: false,
+            code: 403,
+            message: '此接口仅在开发环境可用',
+            data: null
+        });
+    }
+    
+    res.status(200).json({
+        success: true,
+        message: '服务重启请求已接收，正在重启...',
+        data: null
+    });
+    
+    // 执行重启脚本
+    const restartScript = spawn('bash', ['restart-server.sh'], {
+        detached: true,
+        stdio: 'inherit'
+    });
+    
+    // 退出当前进程
+    setTimeout(() => {
+        process.exit(0);
+    }, 1000);
+});
+
 // 根路径
 router.get('/', (req, res) => {
     res.json({

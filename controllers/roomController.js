@@ -292,10 +292,11 @@ class RoomController {
     // 解散房间
     static disband(req, res) {
         try {
-            const { roomId } = req.params;
-            const { userId } = req.body;
+            Logger.info(`disband request body: ${JSON.stringify(req.body)}`);
+            const { roomId, userId } = req.body;
             
             if (!roomId) {
+                Logger.info(`roomId is null or undefined, req.body: ${JSON.stringify(req.body)}`);
                 return res.status(400).json({
                     success: false,
                     code: 400,

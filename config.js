@@ -33,8 +33,8 @@ const CONFIG = {
     
     // SSL配置
     SSL: {
-        KEY_PATH: path.join(__dirname, 'key.pem'),
-        CERT_PATH: path.join(__dirname, 'cert.pem')
+        KEY_PATH: path.join(__dirname, 'certs', 'key.pem'),
+        CERT_PATH: path.join(__dirname, 'certs', 'cert.pem')
     },
     
     // 环境

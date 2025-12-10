@@ -70,8 +70,27 @@ function initEventListeners() {
     // 刷新按钮
     if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
-            loadDashboard();
-            window.utils.showToast('数据已刷新', 'success');
+            // 获取当前显示的页面ID
+            const currentPage = document.querySelector('.page-content:not(.d-none)');
+            if (currentPage) {
+                const pageId = currentPage.id;
+                // 根据当前页面调用对应的刷新函数
+                switch(pageId) {
+                    case 'dashboard-content':
+                        loadDashboard();
+                        break;
+                    case 'rooms-content':
+                        window.roomManager.loadAllRooms();
+                        break;
+                    case 'users-content':
+                        window.userManager.loadUsers();
+                        break;
+                    case 'logs-content':
+                        window.userManager.loadLogs();
+                        break;
+                }
+                window.utils.showToast('数据已刷新', 'success');
+            }
         });
     }
 
@@ -182,6 +201,37 @@ function initEventListeners() {
             });
         });
     }
+    
+    // 重启服务函数
+    window.restartServer = function() {
+        window.utils.showConfirm('确定要重启服务器吗？此操作将导致服务暂时不可用。', async function() {
+            try {
+                window.utils.showToast('正在重启服务器...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/restart`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.utils.showToast(result.message, 'success');
+                    // 等待3秒后刷新页面
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    window.utils.showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('重启服务器失败:', error);
+                window.utils.showToast('重启服务器失败，请检查服务器状态', 'error');
+            }
+        });
+    };
 }
 
 // 初始化页面
