@@ -202,6 +202,9 @@ function updateStats(stats) {
     `;
 }
 
+// 导出API_BASE_URL到全局作用域
+window.API_BASE_URL = API_BASE_URL;
+
 // 导出工具函数
 window.utils = {
     showToast,
