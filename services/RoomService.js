@@ -323,12 +323,12 @@ class RoomService {
 
         const room = rooms.get(roomId);
         
-        // 验证用户是否为房间创建者
-        if (!room.isCreator(userId)) {
+        // 验证用户是否为房间创建者或管理员
+        if (!room.isCreator(userId) && userId !== 'admin') {
             return {
                 success: false,
                 code: 403,
-                message: '只有房间创建者可以解散房间',
+                message: '只有房间创建者或管理员可以解散房间',
                 data: null
             };
         }
@@ -336,9 +336,8 @@ class RoomService {
         // 清理房间中的所有用户
         room.getAllUsers().forEach(user => {
             if (users.has(user.userId)) {
-                const userObj = users.get(user.userId);
-                userObj.isOnline = false;
-                userObj.updateActivity();
+                // 从全局用户映射中删除用户，彻底清除关联
+                users.delete(user.userId);
             }
         });
 
