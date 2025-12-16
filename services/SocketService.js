@@ -274,7 +274,7 @@ class SocketService {
     }
     
     // 处理创建房间
-    async handleCreateRoom(userSocket, data) {
+    async handleCreateRoom(userSocket, data,ack) {
         const { roomId, userId, nickname, roomName, mediaConfig } = data;
         
         try {
@@ -290,16 +290,16 @@ class SocketService {
                 this.roomSocketManager.addUserToRoom(roomId, userSocket);
                 
                 // 发送创建结果
-                userSocket.send('createRoomResult', result);
+                ack(result);
                 
                 Logger.info(`用户 ${userId} 创建了房间 ${roomId}`);
             } else {
                 // 发送失败结果
-                userSocket.send('createRoomResult', result);
+                ack(result);
             }
         } catch (error) {
             Logger.error(`处理创建房间事件失败: ${error.message}`);
-            userSocket.send('createRoomResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -309,7 +309,7 @@ class SocketService {
     }
     
     // 处理加入房间
-    async handleJoinRoom(userSocket, data) {
+    async handleJoinRoom(userSocket, data,ack) {
         const { roomId, userId, nickname } = data;
         
         try {
@@ -325,7 +325,7 @@ class SocketService {
                 this.roomSocketManager.addUserToRoom(roomId, userSocket);
                 
                 // 发送加入结果
-                userSocket.send('joinRoomResult', result);
+                ack(result);
                 
                 // 广播给房间内其他用户
                 this.roomSocketManager.broadcastToRoom(roomId, 'userJoined', {
@@ -337,11 +337,11 @@ class SocketService {
                 Logger.info(`用户 ${userId} 加入房间 ${roomId}`);
             } else {
                 // 发送失败结果
-                userSocket.send('joinRoomResult', result);
+                ack(result);
             }
         } catch (error) {
             Logger.error(`处理加入房间事件失败: ${error.message}`);
-            userSocket.send('joinRoomResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -351,7 +351,7 @@ class SocketService {
     }
     
     // 处理离开房间
-    async handleLeaveRoom(userSocket, data) {
+    async handleLeaveRoom(userSocket, data,ack) {
         const { roomId, userId } = data;
         
         try {
@@ -364,7 +364,7 @@ class SocketService {
                 this.roomSocketManager.removeUserFromRoom(roomId, userSocket);
                 
                 // 发送离开结果
-                userSocket.send('leaveRoomResult', result);
+                ack(result);
                 
                 // 广播给房间内其他用户
                 this.roomSocketManager.broadcastToRoom(roomId, 'userLeft', {
@@ -375,11 +375,11 @@ class SocketService {
                 Logger.info(`用户 ${userId} 离开房间 ${roomId}`);
             } else {
                 // 发送失败结果
-                userSocket.send('leaveRoomResult', result);
+                ack(result);
             }
         } catch (error) {
             Logger.error(`处理离开房间事件失败: ${error.message}`);
-            userSocket.send('leaveRoomResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -389,14 +389,14 @@ class SocketService {
     }
     
     // 处理获取房间列表
-    async handleGetRooms(userSocket) {
+    async handleGetRooms(userSocket,ack) {
         try {
             // 使用RoomService获取房间列表
             const result = await RoomService.getAllRooms();
-            userSocket.send('getRoomsResult', result);
+            ack(result);
         } catch (error) {
             Logger.error(`处理获取房间列表事件失败: ${error.message}`);
-            userSocket.send('getRoomsResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -406,16 +406,16 @@ class SocketService {
     }
     
     // 处理获取房间用户
-    async handleGetRoomUsers(userSocket, data) {
+    async handleGetRoomUsers(userSocket, data,ack) {
         const { roomId } = data;
         
         try {
             // 使用RoomService获取房间用户
             const result = await RoomService.getRoomUsers(roomId);
-            userSocket.send('getRoomUsersResult', result);
+            ack(result);
         } catch (error) {
             Logger.error(`处理获取房间用户事件失败: ${error.message}`);
-            userSocket.send('getRoomUsersResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -425,7 +425,7 @@ class SocketService {
     }
     
     // 处理解散房间
-    async handleDisbandRoom(userSocket, data) {
+    async handleDisbandRoom(userSocket, data,ack) {
         const { roomId, userId } = data;
         
         try {
@@ -434,7 +434,7 @@ class SocketService {
             
             if (result.success) {
                 // 发送解散结果
-                userSocket.send('disbandRoomResult', result);
+                ack(result);    
                 
                 // 广播给房间内所有用户
                 this.io.to(roomId).emit('roomDisbanded', {
@@ -461,7 +461,7 @@ class SocketService {
             }
         } catch (error) {
             Logger.error(`处理解散房间事件失败: ${error.message}`);
-            userSocket.send('disbandRoomResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -471,7 +471,7 @@ class SocketService {
     }
     
     // 处理心跳
-    async handleHeartbeat(userSocket, data) {
+    async handleHeartbeat(userSocket, data,ack ) {
         const { userId } = data;
         
         try {
@@ -483,23 +483,24 @@ class SocketService {
                 userSocket.updateActivity();
             }
             
-            userSocket.send('heartbeatResult', {
+            ack({
                 success: true,
                 message: '心跳成功',
                 timestamp: new Date().toISOString()
             });
         } catch (error) {
             Logger.error(`处理心跳事件失败: ${error.message}`);
-            userSocket.send('heartbeatResult', {
+            ack({
                 success: false,
-                message: '心跳失败',
-                timestamp: new Date().toISOString()
+                code: 500,
+                message: '服务器内部错误',
+                data: null
             });
         }
     }
     
     // 处理自定义消息
-    handleMessage(userSocket, data) {
+    handleMessage(userSocket, data,ack) {
         const { roomId, message } = data;
         
         if (roomId) {
@@ -510,11 +511,16 @@ class SocketService {
                 message: message,
                 timestamp: new Date().toISOString()
             });
+            ack({
+                success: true,
+                message: '消息发送成功',
+                timestamp: new Date().toISOString()
+            });
         }
     }
     
     // 发送消息给指定用户
-    sendToUser(userId, event, data) {
+    sendToUser(userId, event, data,ack) {
         // 查找对应的userSocket
         for (const [socketId, userSocket] of this.userSockets.entries()) {
             if (userSocket.userId === userId && userSocket.isOnline) {
@@ -522,12 +528,22 @@ class SocketService {
                 return true;
             }
         }
+        ack({
+            success: true,
+            sendToUsers: this.userSockets.size,
+            data: null
+        });
         return false;
     }
     
     // 发送消息给房间内所有用户
-    sendToRoom(roomId, event, data) {
+    sendToRoom(roomId, event, data,ack) {
         this.io.to(roomId).emit(event, data);
+        ack({
+            success: true,
+            sendToUsers: this.roomSocketManager.getRoomSocketCount(roomId),
+            data: null
+        });
     }
     
     // 发送消息给所有用户
@@ -546,16 +562,16 @@ class SocketService {
     }
     
     // 处理获取房间信息
-    async handleGetRoomInfo(userSocket, data) {
+    async handleGetRoomInfo(userSocket, data,ack) {
         const { roomId } = data;
         
         try {
             // 使用RoomService获取房间信息
             const result = await RoomService.getRoomInfo(roomId);
-            userSocket.send('getRoomInfoResult', result);
+            ack(result);
         } catch (error) {
             Logger.error(`处理获取房间信息事件失败: ${error.message}`);
-            userSocket.send('getRoomInfoResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -565,16 +581,16 @@ class SocketService {
     }
     
     // 处理更新媒体配置
-    async handleUpdateMediaConfig(userSocket, data) {
+    async handleUpdateMediaConfig(userSocket, data,ack) {
         const { roomId, userId, mediaConfig } = data;
         
         try {
             // 使用RoomService更新媒体配置
             const result = await RoomService.updateMediaConfig(roomId, userId, mediaConfig);
-            userSocket.send('updateMediaConfigResult', result);
+            ack(result);
         } catch (error) {
             Logger.error(`处理更新媒体配置事件失败: ${error.message}`);
-            userSocket.send('updateMediaConfigResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -584,13 +600,13 @@ class SocketService {
     }
     
     // 处理更新用户信息
-    async handleUpdateUser(userSocket, data) {
+    async handleUpdateUser(userSocket, data,ack) {
         const { userId, nickname } = data;
         
         try {
             // 使用UserService更新用户信息
-            const result = UserService.updateUser(userId, nickname);
-            userSocket.send('updateUserResult', result);
+            const result = await UserService.updateUser(userId, nickname);
+            ack(result);
             
             // 更新本地用户信息
             if (userSocket.userId === userId) {
@@ -600,7 +616,7 @@ class SocketService {
             Logger.info(`用户 ${userId} 更新了信息，新昵称: ${nickname}`);
         } catch (error) {
             Logger.error(`处理更新用户信息事件失败: ${error.message}`);
-            userSocket.send('updateUserResult', {
+            ack({
                 success: false,
                 code: 500,
                 message: '服务器内部错误',
@@ -610,12 +626,12 @@ class SocketService {
     }
     
     // 处理健康检查
-    async handleHealthCheck(userSocket) {
+    async handleHealthCheck(userSocket,ack) {
         try {
             // 获取系统统计信息
             const stats = RoomService.getStats();
             
-            userSocket.send('healthCheckResult', {
+            ack({
                 success: true,
                 status: 'healthy',
                 timestamp: new Date().toISOString(),
@@ -623,7 +639,7 @@ class SocketService {
             });
         } catch (error) {
             Logger.error(`处理健康检查事件失败: ${error.message}`);
-            userSocket.send('healthCheckResult', {
+            ack({
                 success: false,
                 status: 'unhealthy',
                 message: '服务器内部错误',
